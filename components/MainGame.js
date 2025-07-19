@@ -179,6 +179,7 @@ export default function MainGame({ character, setCharacter, lifeEvents, setLifeE
           job={`Age: ${age}`}
           bankBalance={`${bankBalance}`}
           countryFlag={character.country.flag}
+          gender={character.gender}
         />
       </header>
 

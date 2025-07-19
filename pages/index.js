@@ -5,7 +5,7 @@ import MainGame from '../components/MainGame';
 export default function Home() {
   const [gameStarted, setGameStarted] = useState(false);
   const [gameKey, setGameKey] = useState(0);
-  const [character, setCharacter] = useState({ name: '', country: null });
+  const [character, setCharacter] = useState({ name: '', country: null, gender: null });
   const [lifeEvents, setLifeEvents] = useState([]);
   const [age, setAge] = useState(0);
 
@@ -20,9 +20,9 @@ export default function Home() {
     }
   }, []);
 
-  const handleStartGame = (name, country) => {
-    setCharacter({ name, country });
-    setLifeEvents([`You were born in ${country.name}.`]);
+  const handleStartGame = (name, country, gender) => {
+    setCharacter({ name, country, gender });
+    setLifeEvents([`You were born a ${gender.toLowerCase()} in ${country.name}.`]);
     setAge(0);
     setGameStarted(true);
   };

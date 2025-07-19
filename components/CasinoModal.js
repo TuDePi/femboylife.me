@@ -239,7 +239,7 @@ export default function CasinoModal({ onClose, onWin, onLose }) {
                   onClick={() => setActiveGame(game)}
                   className="w-full flex items-center p-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300"
                 >
-                  <span className="text-2xl mr-4">{game.name === 'Slots' ? '🎰' : game.name === 'Blackjack' ? '🃏' : '룰렛'}</span>
+                  <span className="text-2xl mr-4">{game.name === 'Slots' ? '🎰' : game.name === 'Blackjack' ? '🃏' : '🌕'}</span>
                   <span>{game.name}</span>
                 </button>
               </li>

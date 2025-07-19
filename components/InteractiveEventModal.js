@@ -10,7 +10,7 @@ export default function InteractiveEventModal({ event, onSelect, onClose }) {
             <button
               key={index}
               onClick={() => onSelect(option)}
-              className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              className="w-full px-4 py-2 bg-trans-pink text-white rounded-lg hover:bg-trans-pink"
             >
               {option.text}
             </button>

@@ -6,6 +6,7 @@ import { firstNames, lastNames } from '../lib/names';
 export default function StartScreen({ onStart }) {
   const [name, setName] = useState('');
   const [country, setCountry] = useState(countries[0]);
+  const [gender, setGender] = useState(null);
 
   const generateRandomName = () => {
     let firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
@@ -55,6 +56,24 @@ export default function StartScreen({ onStart }) {
           </div>
         </div>
 
+        <div className="mb-4">
+          <label className="block text-lg font-semibold mb-2">Gender</label>
+          <div className="flex space-x-4">
+            <button 
+              onClick={() => setGender('Male')}
+              className={`px-8 py-4 text-2xl font-semibold rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-opacity-75 ${gender === 'Male' ? 'bg-blue-500 text-white ring-blue-400' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+            >
+              ♂ Male
+            </button>
+            <button 
+              onClick={() => setGender('Female')}
+              className={`px-8 py-4 text-2xl font-semibold rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-opacity-75 ${gender === 'Female' ? 'bg-pink-500 text-white ring-pink-400' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+            >
+              ♀ Female
+            </button>
+          </div>
+        </div>
+
         <div className="mb-8">
           <label htmlFor="country" className="block text-lg font-semibold mb-2">Country</label>
           <select 
@@ -68,8 +87,8 @@ export default function StartScreen({ onStart }) {
         </div>
 
         <button 
-          onClick={() => onStart(name, country)}
-          disabled={!name}
+          onClick={() => onStart(name, country, gender)}
+          disabled={!name || !gender}
           className="px-8 py-4 text-2xl font-semibold text-white bg-green-500 rounded-lg shadow-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 disabled:bg-gray-400"
         >
           Start a new life
