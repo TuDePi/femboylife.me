@@ -5,13 +5,14 @@ import HeaderBar from './HeaderBar';
 import BottomMenu from './BottomMenu';
 import CharacterInfo from './CharacterInfo';
 import ActivitiesModal from './ActivitiesModal';
-import SchoolModal from './SchoolModal';
+import OccupationModal from './OccupationModal';
 import AssetsModal from './AssetsModal';
 import RelationshipsModal from './RelationshipsModal';
 import SpecialEventModal from './SpecialEventModal';
 import DeathScreen from './DeathScreen';
 import InteractiveEventModal from './InteractiveEventModal';
 import { getEvent } from '../lib/events';
+import { jobs } from '../lib/jobs';
 
 export default function MainGame({ character, setCharacter, lifeEvents, setLifeEvents, age, setAge, onDeath }) {
   const [stats, setStats] = useState({
@@ -22,7 +23,7 @@ export default function MainGame({ character, setCharacter, lifeEvents, setLifeE
     fame: 0,
   });
   const [isActivitiesModalOpen, setIsActivitiesModalOpen] = useState(false);
-  const [isSchoolModalOpen, setIsSchoolModalOpen] = useState(false);
+  const [isOccupationModalOpen, setIsOccupationModalOpen] = useState(false);
   const [isAssetsModalOpen, setIsAssetsModalOpen] = useState(false);
   const [isRelationshipsModalOpen, setIsRelationshipsModalOpen] = useState(false);
   const [triggeredOneTimeEvents, setTriggeredOneTimeEvents] = useState([]);
@@ -32,6 +33,7 @@ export default function MainGame({ character, setCharacter, lifeEvents, setLifeE
   const [isDead, setIsDead] = useState(false);
   const [education, setEducation] = useState({ level: 'None', yearsLeft: 0 });
   const [bankBalance, setBankBalance] = useState(1000);
+  const [job, setJob] = useState(null);
 
   const handleWin = (amount, message) => {
     setBankBalance(prev => prev + amount);
@@ -87,12 +89,19 @@ export default function MainGame({ character, setCharacter, lifeEvents, setLifeE
     // Update education status
     if (newAge >= 3 && newAge <= 5) {
       setEducation({ level: 'Preschool', yearsLeft: 5 - newAge });
-    } else if (newAge >= 6 && newAge <= 17) {
+    } else if (newAge >= 6 && newAge <= 13) {
+      setEducation({ level: 'Elementary School', yearsLeft: 13 - newAge });
+    } else if (newAge >= 14 && newAge <= 17) {
       setEducation({ level: 'High School', yearsLeft: 17 - newAge });
     } else if (newAge === 18) {
       setEducation({ level: 'Graduated', yearsLeft: 0 });
-    } else {
-      setEducation({ level: 'None', yearsLeft: 0 });
+    } else if (education.level !== 'None' && education.yearsLeft > 0) {
+      setEducation(prev => ({ ...prev, yearsLeft: prev.yearsLeft - 1 }));
+    }
+
+    if (job) {
+      setBankBalance(prev => prev + job.salary);
+      setLifeEvents(prev => [...prev, `I earned ${job.salary} from my job as a ${job.title}.`]);
     }
   };
 
@@ -129,13 +138,20 @@ export default function MainGame({ character, setCharacter, lifeEvents, setLifeE
     } else if (action === 'Skip class') {
       setStats(prev => ({ ...prev, smarts: Math.max(0, prev.smarts - 2), happiness: Math.min(100, prev.happiness + 2) }));
     }
-    setIsSchoolModalOpen(false);
+    setIsOccupationModalOpen(false);
   };
 
   const handleUniversityApplication = (major) => {
     setEducation({ level: major, yearsLeft: 4 });
     setLifeEvents(prev => [...prev, `I enrolled in ${major}.`]);
-    setIsSchoolModalOpen(false);
+    setIsOccupationModalOpen(false);
+  };
+
+  const handleJobAction = (jobTitle) => {
+    const newJob = jobs.find(job => job.title === jobTitle);
+    setJob(newJob);
+    setLifeEvents(prev => [...prev, `I got a job as a ${newJob.title}.`]);
+    setIsOccupationModalOpen(false);
   };
 
   const handleAssetAction = (action) => {
@@ -176,7 +192,7 @@ export default function MainGame({ character, setCharacter, lifeEvents, setLifeE
         <HeaderBar onRestart={onDeath} />
         <CharacterInfo 
           name={character.name}
-          job={`Age: ${age}`}
+          job={job ? job.title : `Age: ${age}`}
           bankBalance={`${bankBalance}`}
           countryFlag={character.country.flag}
           gender={character.gender}
@@ -195,7 +211,7 @@ export default function MainGame({ character, setCharacter, lifeEvents, setLifeE
         <BottomMenu 
           onAgeUp={handleAgeUp} 
           onActivitiesClick={() => setIsActivitiesModalOpen(true)}
-          onSchoolClick={() => setIsSchoolModalOpen(true)}
+          onOccupationClick={() => setIsOccupationModalOpen(true)}
           onAssetsClick={() => setIsAssetsModalOpen(true)}
           onRelationshipsClick={() => setIsRelationshipsModalOpen(true)}
           character={character}
@@ -215,11 +231,14 @@ export default function MainGame({ character, setCharacter, lifeEvents, setLifeE
           onLose={handleLose}
         />
       )}
-      {isSchoolModalOpen && (
-        <SchoolModal
-          onClose={() => setIsSchoolModalOpen(false)}
+      {isOccupationModalOpen && (
+        <OccupationModal
+          onClose={() => setIsOccupationModalOpen(false)}
           onSchoolAction={handleSchoolAction}
+          onJobAction={handleJobAction}
           education={education}
+          stats={stats}
+          job={job}
         />
       )}
       {isAssetsModalOpen && (

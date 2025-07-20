@@ -1,0 +1,1 @@
+Implemented the job system, allowing players to get a job from a list of available options based on their education and smarts. The character's job and annual salary are now displayed, and the bank balance is updated accordingly each year.

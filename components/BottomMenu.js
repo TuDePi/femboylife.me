@@ -7,7 +7,7 @@ const MenuItem = ({ label, icon, onClick }) => (
     </button>
   );
 
-export default function BottomMenu({ onAgeUp, onSchoolClick, onAssetsClick, onRelationshipsClick, onActivitiesClick, character, lifeEvents, age, education }) {
+export default function BottomMenu({ onAgeUp, onOccupationClick, onAssetsClick, onRelationshipsClick, onActivitiesClick, character, lifeEvents, age, education }) {
 
   const handleAgeUp = () => {
     onAgeUp();
@@ -26,7 +26,7 @@ export default function BottomMenu({ onAgeUp, onSchoolClick, onAssetsClick, onRe
   return (
     <div className="relative h-20 sm:h-24 bg-trans-blue">
         <div className="flex justify-around items-center h-full">
-            <MenuItem icon="🎓" label={education.level !== 'None' ? `${education.level} (${education.yearsLeft} yrs)` : 'School'} onClick={onSchoolClick} />
+            <MenuItem icon="💼" label="Occupation" onClick={onOccupationClick} />
             <MenuItem icon="💰"label="Assets" onClick={onAssetsClick} />
             <div className="w-20 sm:w-24"></div> {/* Placeholder for the big button */}
             <MenuItem icon="❤️" label="Relationships" onClick={onRelationshipsClick} />
