@@ -13,6 +13,7 @@ import DeathScreen from './DeathScreen';
 import InteractiveEventModal from './InteractiveEventModal';
 import { getEvent } from '../lib/events';
 import { jobs } from '../lib/jobs';
+import { expenses } from '../lib/expenses';
 
 export default function MainGame({ character, setCharacter, lifeEvents, setLifeEvents, age, setAge, onDeath }) {
   const [stats, setStats] = useState({
@@ -32,8 +33,12 @@ export default function MainGame({ character, setCharacter, lifeEvents, setLifeE
   const [interactiveEvent, setInteractiveEvent] = useState(null);
   const [isDead, setIsDead] = useState(false);
   const [education, setEducation] = useState({ level: 'None', yearsLeft: 0 });
+  const [currentMajor, setCurrentMajor] = useState(null);
+  const [degrees, setDegrees] = useState([]);
   const [bankBalance, setBankBalance] = useState(1000);
   const [job, setJob] = useState(null);
+  const [yearsAtJob, setYearsAtJob] = useState(0);
+  const [currentTuitionCost, setCurrentTuitionCost] = useState(0);
 
   const handleWin = (amount, message) => {
     setBankBalance(prev => prev + amount);
@@ -97,12 +102,39 @@ export default function MainGame({ character, setCharacter, lifeEvents, setLifeE
       setEducation({ level: 'Graduated', yearsLeft: 0 });
     } else if (education.level !== 'None' && education.yearsLeft > 0) {
       setEducation(prev => ({ ...prev, yearsLeft: prev.yearsLeft - 1 }));
+      if (education.level === 'University') {
+        const tuitionCost = expenses.universityTuition.cost;
+        if (bankBalance < tuitionCost) {
+          setLifeEvents(prev => [...prev, `I couldn't afford university tuition this year. I need ${tuitionCost}.`]);
+          setEducation({ level: 'None', yearsLeft: 0 }); // Drop out if cannot afford
+        } else {
+          setBankBalance(prev => prev - tuitionCost);
+          setLifeEvents(prev => [...prev, `I paid ${tuitionCost} for university tuition.`]);
+        }
+      }
+      if (education.yearsLeft === 1) {
+        setDegrees(prev => [...prev, currentMajor]);
+        setEducation({ level: 'Graduated', yearsLeft: 0 });
+        setSpecialEvent({ description: `You graduated from ${currentMajor} school!` });
+        setIsSpecialEventModalOpen(true);
+      }
     }
 
     if (job) {
+      setYearsAtJob(prev => prev + 1);
+      if (yearsAtJob > 0 && yearsAtJob % 5 === 0) {
+        const currentPromotion = Math.floor(yearsAtJob / 5);
+        if (job.salaryGrowth && currentPromotion < job.salaryGrowth.length) {
+          const newSalary = job.salaryGrowth[currentPromotion];
+          setJob(prev => ({ ...prev, salary: newSalary }));
+          setLifeEvents(prev => [...prev, `I got a raise! My new salary is ${newSalary}.`]);
+        }
+      }
       setBankBalance(prev => prev + job.salary);
       setLifeEvents(prev => [...prev, `I earned ${job.salary} from my job as a ${job.title}.`]);
     }
+
+    handleExpensesAndTaxes();
   };
 
   const handleCloseSpecialEventModal = () => {
@@ -141,15 +173,75 @@ export default function MainGame({ character, setCharacter, lifeEvents, setLifeE
     setIsOccupationModalOpen(false);
   };
 
+  const universityTuitionCosts = {
+    'Law': 45000,
+    'Medical': 50000,
+    'Business': 35000,
+    'Computer Science': 40000,
+    'None': 10000, // Default for general university if no specific major
+  };
+
   const handleUniversityApplication = (major) => {
-    setEducation({ level: major, yearsLeft: 4 });
-    setLifeEvents(prev => [...prev, `I enrolled in ${major}.`]);
+    const applicationFee = 500; // Example application fee
+    if (bankBalance < applicationFee) {
+      setLifeEvents(prev => [...prev, `I don't have enough money to apply to university. I need ${applicationFee}.`]);
+      return;
+    }
+
+    setBankBalance(prev => prev - applicationFee);
+    setLifeEvents(prev => [...prev, `I paid ${applicationFee} for university application.`]);
+
+    let years = 4;
+    let actualMajor = major;
+    if (major === 'Law School') actualMajor = 'Law';
+    if (major === 'Medical School') actualMajor = 'Medical';
+    if (major === 'Business School') actualMajor = 'Business';
+    if (major === 'Computer Science') actualMajor = 'Computer Science';
+    
+    const tuition = universityTuitionCosts[actualMajor] || universityTuitionCosts['None'];
+    setCurrentTuitionCost(tuition);
+
+    setEducation({ level: 'University', yearsLeft: years });
+    setCurrentMajor(actualMajor);
+    setLifeEvents(prev => [...prev, `I enrolled in ${actualMajor}.`]);
     setIsOccupationModalOpen(false);
   };
 
   const handleJobAction = (jobTitle) => {
+    if (jobTitle === 'Quit job') {
+      setLifeEvents(prev => [...prev, `I quit my job as a ${job.title}.`]);
+      setJob(null);
+      setYearsAtJob(0);
+      setIsOccupationModalOpen(false);
+      return;
+    }
     const newJob = jobs.find(job => job.title === jobTitle);
+    if (newJob.salaryGrowth && newJob.salaryGrowth.length > 0) {
+      newJob.salary = newJob.salaryGrowth[0];
+    }
+    if (newJob.requiredDegree && !degrees.includes(newJob.requiredDegree)) {
+      setLifeEvents(prev => [...prev, `You need a ${newJob.requiredDegree} degree to get this job.`]);
+      return;
+    }
+    if (newJob.requiredEducation !== 'None' && !(education.level === newJob.requiredEducation || (newJob.requiredEducation === 'University' && (education.level === 'Graduated' || degrees.length > 0)))) {
+        setLifeEvents(prev => [...prev, `You need a ${newJob.requiredEducation} to get this job.`]);
+        return;
+    }
+    if (newJob.requiredSmarts > stats.smarts) {
+        setLifeEvents(prev => [...prev, `You need ${newJob.requiredSmarts} smarts to get this job.`]);
+        return;
+    }
+    if (newJob.requiredAge && age < newJob.requiredAge) {
+        setLifeEvents(prev => [...prev, `You need to be at least ${newJob.requiredAge} years old to get this job.`]);
+        return;
+    }
+    if (newJob.maxAge && age > newJob.maxAge) {
+        setLifeEvents(prev => [...prev, `You need to be at most ${newJob.maxAge} years old to get this job.`]);
+        return;
+    }
+
     setJob(newJob);
+    setYearsAtJob(0);
     setLifeEvents(prev => [...prev, `I got a job as a ${newJob.title}.`]);
     setIsOccupationModalOpen(false);
   };
@@ -180,6 +272,30 @@ export default function MainGame({ character, setCharacter, lifeEvents, setLifeE
     setLifeEvents(prev => [...prev, `${interactiveEvent.description} You chose to ${option.text.toLowerCase()}.`]);
     setTriggeredOneTimeEvents(prev => [...prev, interactiveEvent.description]);
     setInteractiveEvent(null);
+  };
+
+  const handleExpensesAndTaxes = () => {
+    if (age < 18) return;
+
+    let totalExpenses = 0;
+    let expensesDescription = 'I paid for ';
+
+    for (const expense in expenses) {
+      totalExpenses += expenses[expense].cost;
+      expensesDescription += `${expenses[expense].name}, `;
+    }
+
+    let taxes = 0;
+    if (job) {
+      taxes = Math.floor(job.salary * 0.2);
+      totalExpenses += taxes;
+      expensesDescription += `and taxes.`;
+    } else {
+      expensesDescription = expensesDescription.slice(0, -2) + '.';
+    }
+
+    setBankBalance(prev => prev - totalExpenses);
+    setLifeEvents(prev => [...prev, expensesDescription, `Total expenses: ${totalExpenses}.`]);
   };
 
   if (isDead) {
@@ -239,6 +355,8 @@ export default function MainGame({ character, setCharacter, lifeEvents, setLifeE
           education={education}
           stats={stats}
           job={job}
+          degrees={degrees}
+          age={age}
         />
       )}
       {isAssetsModalOpen && (

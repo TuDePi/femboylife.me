@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { jobs } from '../lib/jobs';
 
-export default function OccupationModal({ onClose, onSchoolAction, onJobAction, education, stats, job }) {
+export default function OccupationModal({ onClose, onSchoolAction, onJobAction, education, stats, job, degrees, age }) {
   const [activeTab, setActiveTab] = useState('school'); // 'school' or 'job'
 
   const commonActions = [
@@ -10,13 +10,13 @@ export default function OccupationModal({ onClose, onSchoolAction, onJobAction, 
   ];
 
   const universityActions = [
-    { name: "Apply to Law School", icon: "⚖️" },
-    { name: "Apply to Medical School", icon: "⚕️" },
-    { name: "Apply to Art School", icon: "🎨" },
-    { name: "Apply to Business School", icon: "💼" },
+    { name: "Law School", icon: "⚖️" },
+    { name: "Medical School", icon: "⚕️" },
+    { name: "Business School", icon: "💼" },
+    { name: "Computer Science", icon: "💻" },
   ];
 
-  const schoolActions = education.level === 'Graduated' ? universityActions : commonActions;
+  const schoolActions = education.level === 'Graduated' ? universityActions.filter(uni => !degrees.includes(uni.name.replace(" School", ""))) : commonActions;
 
   const availableJobs = jobs.filter(job => {
     const hasRequiredEducation = education.level === job.requiredEducation || job.requiredEducation === 'None';
@@ -25,7 +25,6 @@ export default function OccupationModal({ onClose, onSchoolAction, onJobAction, 
   });
 
   const jobActions = [
-    { name: "Work harder", icon: "💪" },
     { name: "Quit job", icon: "👋" },
   ];
 
@@ -54,7 +53,7 @@ export default function OccupationModal({ onClose, onSchoolAction, onJobAction, 
           {activeTab === 'school' && schoolActions.map((action) => (
             <li key={action.name} className="mb-2">
               <button
-                onClick={() => onSchoolAction(action.name)}
+                onClick={() => onSchoolAction(action.name.replace("Apply to ", ""))}
                 className="w-full flex items-center p-2 bg-trans-blue text-white rounded-lg hover:bg-trans-pink"
               >
                 <span className="text-2xl mr-4">{action.icon}</span>
@@ -64,32 +63,38 @@ export default function OccupationModal({ onClose, onSchoolAction, onJobAction, 
           ))}
           {activeTab === 'job' && (
             job ? (
-              <ul>
-                {jobActions.map((action) => (
-                  <li key={action.name} className="mb-2">
-                    <button
-                      onClick={() => onJobAction(action.name)}
-                      className="w-full flex items-center p-2 bg-trans-blue text-white rounded-lg hover:bg-trans-pink"
-                    >
-                      <span className="text-2xl mr-4">{action.icon}</span>
-                      <span>{action.name}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <div>
+                <p className="text-center mb-4">Current Job: {job.title} - ${job.salary}/yr</p>
+                <ul>
+                  {jobActions.map((action) => (
+                    <li key={action.name} className="mb-2">
+                      <button
+                        onClick={() => onJobAction(action.name)}
+                        className="w-full flex items-center p-2 bg-trans-blue text-white rounded-lg hover:bg-trans-pink"
+                      >
+                        <span className="text-2xl mr-4">{action.icon}</span>
+                        <span>{action.name}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : (
               <ul>
-                {availableJobs.map((job) => (
-                  <li key={job.title} className="mb-2">
-                    <button
-                      onClick={() => onJobAction(job.title)}
-                      className="w-full flex items-center p-2 bg-trans-blue text-white rounded-lg hover:bg-trans-pink"
-                    >
-                      <span className="text-2xl mr-4">🧑‍💼</span>
-                      <span>{job.title} - ${job.salary}/yr</span>
-                    </button>
-                  </li>
-                ))}
+                {jobs.map((job) => {
+                  const isQualified = (job.requiredEducation === 'None' || education.level === job.requiredEducation || (job.requiredEducation === 'University' && (education.level === 'Graduated' || degrees.length > 0))) && stats.smarts >= job.requiredSmarts && (!job.requiredDegree || degrees.includes(job.requiredDegree)) && (!job.requiredAge || age >= job.requiredAge) && (!job.maxAge || age <= job.maxAge);
+                  return (
+                    <li key={job.title} className="mb-2">
+                      <button
+                        onClick={() => onJobAction(job.title)}
+                        className={`w-full flex items-center p-2 rounded-lg ${isQualified ? 'bg-trans-blue text-white hover:bg-trans-pink' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}`}
+                      >
+                        <span className="text-2xl mr-4">🧑‍💼</span>
+                        <span>{job.title} - ${job.salary}/yr</span>
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             )
           )}

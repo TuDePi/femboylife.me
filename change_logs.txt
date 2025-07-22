@@ -1,1 +1,1 @@
-Implemented the job system, allowing players to get a job from a list of available options based on their education and smarts. The character's job and annual salary are now displayed, and the bank balance is updated accordingly each year.
+Updated the university tuition costs for Law, Medical, and Business degrees to be more realistic. Added a new Computer Science degree with its own tuition cost. Modified the Occupation and MainGame components to include the new major and its associated costs.
